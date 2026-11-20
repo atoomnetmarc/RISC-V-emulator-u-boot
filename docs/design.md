@@ -48,11 +48,11 @@ A is required: `arch/riscv/cpu/start.S` uses `amoswap.w` for the hart lottery an
 
 ## Container
 
-The wrapper extends `riscv-emulator-tools-container`. The base image provides the xPack `riscv-none-elf-gcc`; the wrapper adds the U-Boot host tools and the Linux-targeting linker. `CONFIG_TOOLS_LIBCRYPTO=n` and `CONFIG_TOOLS_KWBIMAGE=n` remove the OpenSSL dependency. The Makefile is the native U-Boot interface and the container is an implementation detail.
+The wrapper uses `riscv-emulator-tools-container`. It provides the xPack `riscv-none-elf-gcc`, the U-Boot host tools and the Linux-targeting linker. `CONFIG_TOOLS_LIBCRYPTO=n` and `CONFIG_TOOLS_KWBIMAGE=n` remove the OpenSSL dependency. The Makefile is the native U-Boot interface and the container is an implementation detail.
 
 ## Toolchain
 
-U-Boot compiles with the xPack `riscv64-unknown-elf-gcc` from the base image, which has the rv32 `libgcc`. The xPack linker has no `-pie` or `-shared` support, and U-Boot links with both, so `LD=riscv64-linux-gnu-ld` from the wrapper image does the link step. The Linux linker accepts `-m elf32lriscv` and finds the rv32 `libgcc` through the `-L` path that U-Boot derives from `CC`.
+U-Boot compiles with the xPack `riscv64-unknown-elf-gcc` from the tools container, which has the rv32 `libgcc`. The xPack linker has no `-pie` or `-shared` support, and U-Boot links with both, so `LD=riscv64-linux-gnu-ld` from the tools container does the link step. The Linux linker accepts `-m elf32lriscv` and finds the rv32 `libgcc` through the `-L` path that U-Boot derives from `CC`.
 
 ## Upstream
 
