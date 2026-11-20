@@ -37,7 +37,7 @@
 
 ## Quick Reference
 
-- The wrapper owns the Makefile, the Dockerfile, the Kconfig fragment and the docs. U-Boot is third-party code in the `u-boot/` submodule; do not reformat or patch it without a documented reason.
+- The wrapper owns the Makefile, the Dockerfile, the Kconfig fragment and the docs. U-Boot is third-party code in the shared cache; do not reformat or patch it without a documented reason.
 - Build with `make build`; the container is the build environment.
 - No historic references in comments or documentation: do not use "initial", "previously", "no longer", "now", "before", "after", "was", "became", "replaces the old", or "Fase X" markers. Write in the timeless present tense.
 - No changelogs, phase markers, or technical decisions in source comments: changelogs belong in git commit messages, "Fase X" markers belong nowhere, and technical decisions belong in the rule files under docs/.

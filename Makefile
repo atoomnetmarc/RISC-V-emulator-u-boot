@@ -1,29 +1,29 @@
-# U-Boot build wrapper. The container is the build environment; the source
-# stays on the host.
+# U-Boot build wrapper. The container is the build environment; the pinned
+# source lives in the shared cache outside both repositories.
 
 IMAGE         ?= riscv-emulator-u-boot
 BASE_IMAGE    ?= riscv-emulator-tools-container:latest
-UBOOT_DIR     := u-boot
+UBOOT_VERSION ?= v2026.10
+UBOOT_COMMIT  ?= 5508406582f6f7120dce0c4b3059819a41788db2
+XDG_CACHE_HOME ?= $(HOME)/.cache
+CACHE         := $(XDG_CACHE_HOME)/riscv-emulator
+UBOOT_SRC     := $(CACHE)/u-boot-$(UBOOT_VERSION)
 DEFCONFIG     ?= qemu-riscv32_smode_defconfig
 FRAGMENT      := configs/uboot-fragment.config
-ENV_SOURCE    := configs/riscv-emulator.env
-ENV_TARGET    := $(UBOOT_DIR)/board/emulation/qemu-riscv/riscv-emulator.env
+ENV_FILE      := /src/configs/riscv-emulator.env
 CROSS_COMPILE ?= riscv64-unknown-elf-
-# The xPack bare-metal linker has no -pie or -shared support. U-Boot links
-# with both, so the Linux-targeting linker does the link step. LD is a make
-# built-in (ld), so it needs := rather than ?=.
 LD            := riscv64-linux-gnu-ld
 JOBS          ?= $(shell nproc)
 
-SRC   := /src
-BUILD := $(SRC)/build
-STAMP := build/.image
+SRC       := /src
+UBOOT_MNT := /u-boot-src
+BUILD     := $(SRC)/build
+STAMP     := build/.image
 
-# Rootless podman maps container root to the host user, so no --user is needed.
 DOCKER ?= podman
-RUN    := $(DOCKER) run --rm -v $(CURDIR):$(SRC) -w $(SRC)
+RUN    := $(DOCKER) run --rm -v $(CURDIR):$(SRC) -v $(UBOOT_SRC):$(UBOOT_MNT) -w $(SRC)
 
-.PHONY: all image defconfig build clean distclean
+.PHONY: all image fetch defconfig build clean distclean purge-cache
 
 all: build
 
@@ -34,18 +34,27 @@ $(STAMP): Dockerfile
 	@mkdir -p build
 	@touch $@
 
-$(ENV_TARGET): $(ENV_SOURCE)
-	cp $< $@
+$(UBOOT_SRC)/Makefile:
+	mkdir -p $(CACHE)
+	git clone --depth 1 --branch $(UBOOT_VERSION) \
+		https://git.u-boot-project.org/u-boot/u-boot.git $(UBOOT_SRC)
+	@test "$$(git -C $(UBOOT_SRC) rev-parse HEAD)" = "$(UBOOT_COMMIT)" || { \
+		echo "U-Boot tag $(UBOOT_VERSION) does not match pinned commit"; exit 1; \
+	}
 
-defconfig: $(STAMP) $(ENV_TARGET)
-	$(RUN) $(IMAGE) sh -c 'cd $(UBOOT_DIR) && make O=$(BUILD) $(DEFCONFIG) && scripts/kconfig/merge_config.sh -m -O $(BUILD) $(BUILD)/.config $(SRC)/$(FRAGMENT) && make O=$(BUILD) olddefconfig'
+fetch: $(UBOOT_SRC)/Makefile
+
+defconfig: $(STAMP) fetch
+	$(RUN) $(IMAGE) sh -c 'cd $(UBOOT_MNT) && make O=$(BUILD) $(DEFCONFIG) && scripts/kconfig/merge_config.sh -m -O $(BUILD) $(BUILD)/.config $(SRC)/$(FRAGMENT) && make O=$(BUILD) ENV_FILE=$(ENV_FILE) olddefconfig'
 
 build: defconfig
-	$(RUN) $(IMAGE) make -C $(UBOOT_DIR) O=$(BUILD) -j$(JOBS) CROSS_COMPILE=$(CROSS_COMPILE) LD=$(LD)
+	$(RUN) $(IMAGE) make -C $(UBOOT_MNT) O=$(BUILD) -j$(JOBS) ENV_FILE=$(ENV_FILE) CROSS_COMPILE=$(CROSS_COMPILE) LD=$(LD)
 
 clean:
 	rm -rf build
-	rm -f $(ENV_TARGET)
 
 distclean: clean
 	-$(DOCKER) image rm $(IMAGE)
+
+purge-cache:
+	rm -rf $(UBOOT_SRC)

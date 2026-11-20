@@ -56,4 +56,4 @@ U-Boot compiles with the xPack `riscv64-unknown-elf-gcc` from the base image, wh
 
 ## Upstream
 
-U-Boot `v2026.10` is a submodule at commit `5508406582f6f7120dce0c4b3059819a41788db2`. The wrapper commit records the exact upstream commit.
+U-Boot `v2026.10` is fetched into the shared cache at commit `5508406582f6f7120dce0c4b3059819a41788db2`. The wrapper Makefile records the tag and the exact upstream commit; the source is not part of either repository.
