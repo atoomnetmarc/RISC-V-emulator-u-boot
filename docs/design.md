@@ -38,6 +38,10 @@ A is required: `arch/riscv/cpu/start.S` uses `amoswap.w` for the hart lottery an
 
 `CONFIG_DEBUG_UART=y` with the ns16550 driver at `0x10000000` and a 16 MHz clock. The S-mode default is the SBI console, so the fragment selects `CONFIG_DEBUG_UART_NS16550` explicitly. `CONFIG_DEBUG_UART_ANNOUNCE=y` prints `<debug_uart>` when the early UART is ready, before the driver model serial is up.
 
+## Random number generator
+
+The emulator exposes virtio-rng at `0x10004000` on PLIC source 5. U-Boot binds its virtio-rng driver to device ID 4 and reads it for the `kaslr-seed` property in `/chosen`. `CONFIG_CMD_RNG=y` adds the `rng` command for manual checks. The Zkr driver stays enabled but finds no `seed` CSR in the emulator.
+
 ## Environment
 
 `CONFIG_ENV_IS_NOWHERE=y`. The disk is a Buildroot product, so a saved environment disappears on the next build. The compiled-in environment is the configuration.
