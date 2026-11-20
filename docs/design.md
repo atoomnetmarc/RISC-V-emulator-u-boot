@@ -42,6 +42,10 @@ A is required: `arch/riscv/cpu/start.S` uses `amoswap.w` for the hart lottery an
 
 The emulator exposes virtio-rng at `0x10004000` on PLIC source 5. U-Boot binds its virtio-rng driver to device ID 4 and reads it for the `kaslr-seed` property in `/chosen`. `CONFIG_CMD_RNG=y` adds the `rng` command for manual checks. The Zkr driver stays enabled but finds no `seed` CSR in the emulator.
 
+## Real time clock
+
+The emulator exposes a goldfish RTC at `0x10005000` on PLIC source 6. The device samples the host realtime clock at init and advances from the host monotonic clock. U-Boot binds its goldfish RTC driver through `CONFIG_DM_RTC` and `CONFIG_RTC_GOLDFISH`. `CONFIG_CMD_DATE` and `CONFIG_CMD_RTC` add the `date` and `rtc` commands for manual checks. Guest writes change the emulated clock and leave the host clock unchanged.
+
 ## Environment
 
 `CONFIG_ENV_IS_NOWHERE=y`. The disk is a Buildroot product, so a saved environment disappears on the next build. The compiled-in environment is the configuration.
