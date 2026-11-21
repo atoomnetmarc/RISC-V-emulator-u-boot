@@ -1,3 +1,5 @@
+![](u-boot-booting-in-native-emulator.png)
+
 # RISC-V-emulator-u-boot
 
 U-Boot build wrapper for the [RISC-V emulator](../RISC-V-emulator-Native). The wrapper pins U-Boot `v2026.10` in the shared cache and builds the `qemu-riscv32_smode` target in a container.
