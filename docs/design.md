@@ -2,7 +2,7 @@
 
 ## Boot chain
 
-The emulator starts in M-mode at `0x80000000` and loads OpenSBI `fw_jump.bin` at `0x80000000`. OpenSBI jumps to U-Boot at `0x80400000`. U-Boot loads the Linux `Image` and the DTB from the boot partition on the virtio disk and starts the kernel with `booti`.
+The emulator starts in M-mode at `0x80000000` and loads OpenSBI `fw_jump.bin` at `0x80000000`. OpenSBI jumps to U-Boot at `0x80400000`. U-Boot loads `/boot/Image` and `/boot/linux.dtb` from the single ext4 partition on the virtio disk and starts the kernel with `booti`.
 
 The load address `0x80400000` is U-Boot's `TEXT_BASE` for RV32 S-mode and OpenSBI's `FW_JUMP_OFFSET=0x400000` target. The U-Boot stack at `0x80200000` stays clear of the text, and the prebuilt OpenSBI ends at `0x80042330`.
 
@@ -22,7 +22,7 @@ The QEMU defaults `kernel_addr_r=0x84000000` and `fdt_addr_r=0x8c000000` are out
 
 ## Disk layout
 
-The disk is a GPT image with a boot partition and a rootfs partition. The boot partition holds the Linux `Image` and the DTB; the rootfs partition holds the Buildroot root. The 21 MB `Image` does not fit the 16 MB rootfs, so it has a partition of its own.
+The disk is a GPT image with one 1GiB ext4 partition at 1M. The Buildroot root holds `/boot/Image` and `/boot/linux.dtb`; U-Boot loads both from partition 1 and the kernel mounts the same partition by `PARTUUID`.
 
 ## RAM size
 
@@ -52,7 +52,7 @@ The emulator exposes a goldfish RTC at `0x10005000` on PLIC source 6. The device
 
 ## Boot commands
 
-`CONFIG_BOOTCOMMAND` carries the boot and `CONFIG_ENV_SOURCE_FILE` points to `configs/riscv-emulator.env`, which the wrapper copies into the board directory. The `.env` file sets `kernel_addr_r=0x80600000`, `fdt_addr_r=0x81b00000` and `ramdisk_addr_r=0x81c00000`. The boot command `ext4load`s the `Image` and the DTB from the boot partition and runs `booti ${kernel_addr_r} - ${fdt_addr_r}`. The `bootargs` live in the DTB `/chosen/bootargs`; the boot command leaves `bootargs` unset, so U-Boot does not overwrite the DTB value.
+`CONFIG_BOOTCOMMAND` carries the boot and `CONFIG_ENV_SOURCE_FILE` points to `configs/riscv-emulator.env`, which the wrapper copies into the board directory. The `.env` file sets `kernel_addr_r=0x80600000`, `fdt_addr_r=0x81b00000` and `ramdisk_addr_r=0x81c00000`. The boot command `ext4load`s `/boot/Image` and `/boot/linux.dtb` from the single ext4 partition and runs `booti ${kernel_addr_r} - ${fdt_addr_r}`. The `bootargs` live in the DTB `/chosen/bootargs`; the boot command leaves `bootargs` unset, so U-Boot does not overwrite the DTB value.
 
 ## Container
 
